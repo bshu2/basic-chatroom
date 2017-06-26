@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	    <meta charset="UTF-8">
+	    <title>Basic Chatroom</title>
+
+	    <style type="text/css">
+			body {
+				display: flex;
+				min-height: 100vh;
+				flex-direction: column;
+			}
+
+			main {
+				flex: 1 0 auto;
+			}
+
+			#chat-messages {
+				min-height: 10vh;
+				height: 60vh;
+				width: 230px;
+				overflow-x: visible;
+				overflow-y: scroll;
+				overflow-wrap: normal;
+				word-wrap: break-word;
+			}
+
+			#chat-messages .system-message {
+				font-weight: bold;
+			}
+	    </style>
+	</head>
+	<body>
+		<h2>Basic Chatroom</h2>
+		<main id="app">
+			<div>
+				<div id="chat-messages"></div>
+			</div>
+			<div v-if="joined">
+				<input type="text" v-model="message" placeholder="Send a message" v-on:keyup.enter="send">
+				<button v-on:click="send">Send</button>
+			</div>
+			<div v-else>
+				<input type="text" v-model.trim="username" placeholder="Enter a name" v-on:keyup.enter="join">
+				<button v-on:click="join">Join</button>
+			</div>
+		</main>
+
+		<script src="https://unpkg.com/vue"></script>
+		<script type="text/javascript">
+			new Vue({
+			    el: "#app",
+
+			    data: {
+			        ws: null, //websocket
+			        username: null,
+			        message: "", 
+			        joined: false 
+			    },
+			    created: function() {
+			        if (!window["WebSocket"]) {
+			            var new_message = document.createElement("div");
+			            new_message.innerText = "Websockets not supported";
+			            new_message.className = "system-message";
+			            chatbox.appendChild(new_message);
+			            console.log("Websockets not supported");
+			            return;
+			        }  
+			        var that = this;
+			        this.ws = new WebSocket("wss://" + window.location.host + window.location.pathname + "/ws");
+			        //handle messages
+			        this.ws.onmessage = function(e) {
+			            var chatbox = document.getElementById("chat-messages");
+			            var json_message = JSON.parse(e.data);
+			            var new_message = document.createElement("div");
+			            switch (json_message.message_type) {
+			                case 0://CHAT_MESSAGE
+			                    new_message.innerText = json_message.username + ": " + json_message.message_text;
+			                    chatbox.appendChild(new_message);
+			                    break;
+			                case 1://SYSTEM_MESSAGE
+			                    new_message.innerText = json_message.message_text;
+			                    new_message.className = "system-message";
+			                    chatbox.appendChild(new_message);
+			                    break;
+			                default:
+			                    break;
+			            }
+			            chatbox.scrollTop = chatbox.scrollHeight - chatbox.clientHeight; //automatic scroll
+			        };
+
+			        //message when websocket closes
+			        this.ws.onclose = function(e) {
+			            var chatbox = document.getElementById("chat-messages");
+			            var disconnected_message = document.createElement("div");
+			            disconnected_message.innerText = "connection lost";
+			            disconnected_message.className = "system-message";
+			            chatbox.appendChild(disconnected_message);
+			        }
+			    },
+			    methods: {
+			        //send a message
+			        send: function () {
+			            if (this.message != "") {
+			                this.ws.send(JSON.stringify({
+			                        username: this.username,
+			                        message_text: this.message
+			                    }
+			                ));
+			                this.message = "";
+			            }
+			        },
+			        //join the room
+			        join: function () {
+			            if (!this.username) {
+			                return
+			            }
+			            this.joined = true;
+			            this.ws.send(JSON.stringify({
+			                    username: this.username,
+			                    message_text: ""
+			                }
+			            ));
+			        }
+			    }
+			});
+	    </script>
+	</body>
+</html>

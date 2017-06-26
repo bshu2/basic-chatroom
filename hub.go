@@ -14,14 +14,16 @@ type BroadcastMessage struct {
 }
 
 type Hub struct {
+	server *Server //the server for this hub
 	clients map[*Client] bool //map of all connected clients
 	broadcast chan ClientMessage //channel to broadcast messages
 	add chan *Client //channel to add clients
 	remove chan *Client //channel to remove clients
 }
 
-func NewHub() *Hub {
+func NewHub(server *Server) *Hub {
 	hub := new(Hub)
+	hub.server = server
 	hub.clients = make(map[*Client] bool)
 	hub.broadcast = make(chan ClientMessage)
 	hub.add = make(chan *Client)
@@ -44,6 +46,9 @@ func (hub *Hub) run() {
 				delete(hub.clients, client)
 				client.ws_conn.Close()
 				//log.Println("client removed")
+				//if (len(hub.clients) == 0) {
+					//TODO delete hub if it has no clients
+				//}
 			}
 
 		//broadcast message in broadcast channel to all connected clients

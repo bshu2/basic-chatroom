@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	    <meta charset="UTF-8">
+	    <title>Basic Chatroom</title>
+	</head>
+	<body>
+		<h2>Basic Chatroom</h2>
+		<main id="app">
+			<div>
+				<input type="text" v-model="room_id" placeholder="Room ID" v-on:keyup.enter="create">
+				<button v-on:click="create">Join/Create a Room</button>
+			</div>
+		</main>
+		<script src="https://unpkg.com/vue"></script>
+		<script type="text/javascript">
+			new Vue({
+			    el: "#app",
+
+			    data: {
+			        room_id: ""
+			    },
+			    created: function() {
+			        if (!window["WebSocket"]) {
+			            console.log("Websockets not supported");
+			            return;
+			        }
+			    },
+			    methods: {
+			    	create: function() {
+						var alphanumeric = /^[a-zA-Z0-9]+$/;  
+						if (!this.room_id || !this.room_id.match(alphanumeric)) {
+							return;
+						}
+						//redirect to room with specified room_id
+						window.location.href = "https://ancient-springs-47820.herokuapp.com/room/" + this.room_id;
+			    	}
+			    }
+			});
+		</script>
+	</body>
+</html>
